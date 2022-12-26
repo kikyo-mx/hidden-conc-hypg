@@ -76,7 +76,7 @@ class HGAT(torch.nn.Module):
                 node_index = torch.where(e[1] == edge)[0]
                 Hnode[node_index] = weights[e[0][node_index]]
                 Hedge[node_index] = torch.sum((concept[node_index].unsqueeze(1) * Hnode[node_index]), dim=0).float()
-            HG_Attn = F.cosine_similarity(Hnode, Hedge) + 1 / 2
+            HG_Attn = (F.cosine_similarity(Hnode, Hedge) + 1) / 2
             HG_Attn = self.ones.to(device) * HG_Attn.unsqueeze(1)
             x = F.leaky_relu(self.hatt1(output, e, hyperedge_attr=HG_Attn), 0.2)
         else:

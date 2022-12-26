@@ -119,7 +119,9 @@ for epoch in loop1:
         val_loss = np.average(val_loss)
     end_time = time.time()
     writer.add_scalar('val_loss', val_loss, global_step=epoch)
-    writer.add_scalar('val_sharp', val_performance[0], global_step=epoch)
+    writer.add_scalar('val_sharp1', val_performance[0], global_step=epoch)
+    writer.add_scalar('val_sharp5', val_performance[1], global_step=epoch)
+    writer.add_scalar('val_sharp30', val_performance[2], global_step=epoch)
     loop1.set_description(f'Epoch [{epoch + 1}/{epochs}] Train Performance')
     loop1.set_postfix(tra_loss=format(train_loss, '.5f'), val_loss=format(val_loss, '.5f'),
                       val_sharp=val_performance, time=format(end_time - start_time, '.2f'))
