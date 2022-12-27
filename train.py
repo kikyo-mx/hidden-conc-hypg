@@ -39,7 +39,7 @@ seq_len = 8
 steps = 1
 lr = 0.01
 top_num = 5
-epochs = 50
+epochs = 100
 d_model = 128
 rr_num = [0, 1, 2]
 ues_attn = False
@@ -102,7 +102,9 @@ for epoch in loop1:
         val_loss = []
         # val_pre = torch.zeros((len(validate_loader), len(tickers), 3))
         # val_gt = torch.zeros((len(validate_loader), len(tickers), 3))
-        val_performance = torch.zeros(len(validate_loader), len(rr_num))
+        val_performance = {}
+        val_performance['sharp'] = torch.zeros(len(validate_loader), len(rr_num))
+        val_performance['irr'] = torch.zeros(len(validate_loader), len(rr_num))
         for i, (batch_x, batch_mask, batch_y, batch_Pre) in enumerate(validate_loader):
             output = model(batch_x.squeeze(0).to(device), hyp_input, batch_Pre[0])
             mask = batch_mask.to(device).bool().squeeze(0)
@@ -110,21 +112,29 @@ for epoch in loop1:
             ground_truth = batch_y.to(device).squeeze(0) * mask.unsqueeze(1)
             loss_val = get_loss(pred, ground_truth, loss_weight, rr_num)
             val_loss.append(loss_val.cpu().detach().numpy())
-            # val_pre[i] = pred.cpu()
-            # val_gt[i] = ground_truth.cpu()
-            val_sharp = evaluate(pred, ground_truth, top_num, rr_num)['sharp']
-            if not torch.isinf(val_sharp).any():
-                val_performance[i] = val_sharp
-        val_performance = torch.mean(val_performance, dim=0)
+            val = evaluate(pred, ground_truth, top_num, rr_num)
+            val_sharp = val['sharp']
+            val_irr = val['irr']
+            # if torch.all(val_sharp < 10) and torch.all(val_sharp > -10):
+            #     val_performance['sharp'][i] = val_sharp
+            val_performance['sharp'][i] = val_sharp
+            val_performance['irr'][i] = val_irr
+        # val_performance['sharp'] = torch.mean(val_performance['sharp'][~torch.all(val_performance['sharp'] == 0, dim=1)], dim=0)
+        val_performance['sharp'] = torch.mean(val_performance['sharp'], dim=0)
+        val_performance['irr'] = torch.mean(val_performance['irr'], dim=0)
         val_loss = np.average(val_loss)
     end_time = time.time()
     writer.add_scalar('val_loss', val_loss, global_step=epoch)
-    writer.add_scalar('val_sharp1', val_performance[0], global_step=epoch)
-    writer.add_scalar('val_sharp5', val_performance[1], global_step=epoch)
-    writer.add_scalar('val_sharp30', val_performance[2], global_step=epoch)
+    writer.add_scalar('val_sharp1', val_performance['sharp'][0], global_step=epoch)
+    writer.add_scalar('val_sharp5', val_performance['sharp'][1], global_step=epoch)
+    writer.add_scalar('val_sharp30', val_performance['sharp'][2], global_step=epoch)
+    writer.add_scalar('val_irr1', val_performance['irr'][0], global_step=epoch)
+    writer.add_scalar('val_irr5', val_performance['irr'][1], global_step=epoch)
+    writer.add_scalar('val_irr30', val_performance['irr'][2], global_step=epoch)
     loop1.set_description(f'Epoch [{epoch + 1}/{epochs}] Train Performance')
     loop1.set_postfix(tra_loss=format(train_loss, '.5f'), val_loss=format(val_loss, '.5f'),
-                      val_sharp=val_performance, time=format(end_time - start_time, '.2f'))
+                      val_sharp=val_performance['sharp'], val_irr=val_performance['irr'],
+                      time=format(end_time - start_time, '.2f'))
 
 # test
 with torch.no_grad():

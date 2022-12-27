@@ -15,19 +15,20 @@ import torch
 #     return performance
 
 
-
 def evaluate(pred, ground_truth, top_num, rr_num):
     performance = {}
     sharp = torch.zeros(len(rr_num))
+    irr = torch.zeros(len(rr_num))
     for j in range(len(rr_num)):
-        pred_top5 = torch.zeros(5)
+        pred_top5 = torch.zeros(top_num)
         pred_one = torch.argsort(pred[:, j], dim=0, descending=True)
         for i in range(top_num):
             topN = torch.where(pred_one == i)
             pred_top5[i] = ground_truth[:, j][topN[0][0]]
-        # sharp[j] = torch.mean(pred_top5) / torch.std(pred_top5)
-        sharp[j] = torch.mean(pred_top5)
+        sharp[j] = torch.mean(pred_top5) / torch.std(pred_top5) if torch.abs(torch.std(pred_top5)) > 0.1 else torch.mean(pred_top5)
+        irr[j] = torch.mean(pred_top5)
     performance['sharp'] = sharp
+    performance['irr'] = irr
     return performance
 
 
