@@ -1,0 +1,19 @@
+[I 17:19:44.130 NotebookApp] 把notebook服务器的cookie密码写入 /home/kikyo/.local/share/jupyter/runtime/notebook_cookie_secret
+[W 2023-02-06 17:19:44.354 LabApp] 'ip' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-02-06 17:19:44.354 LabApp] 'ip' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-02-06 17:19:44.354 LabApp] 'allow_root' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[W 2023-02-06 17:19:44.354 LabApp] 'allow_root' has moved from NotebookApp to ServerApp. This config will be passed to ServerApp. Be sure to update your config before our next release.
+[I 2023-02-06 17:19:44.359 LabApp] JupyterLab extension loaded from /home/kikyo/anaconda3/lib/python3.9/site-packages/jupyterlab
+[I 2023-02-06 17:19:44.359 LabApp] JupyterLab application directory is /home/kikyo/anaconda3/share/jupyter/lab
+[I 17:19:44.361 NotebookApp] notebooks 运行所在的本地路径: /home/kikyo/code/hidden-conc-hypg
+[I 17:19:44.361 NotebookApp] Jupyter Notebook 6.4.12 is running at:
+[I 17:19:44.361 NotebookApp] http://127.0.0.1:8888/?token=84eb3691085126909d1e69784e4c8eff650dfec9ea636ea8
+[I 17:19:44.361 NotebookApp]  or http://127.0.0.1:8888/?token=84eb3691085126909d1e69784e4c8eff650dfec9ea636ea8
+[I 17:19:44.361 NotebookApp] 使用 Control-C 停止此服务器并关闭所有内核（连续操作两次便可跳过确认界面）。
+[C 17:19:44.363 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///home/kikyo/.local/share/jupyter/runtime/nbserver-25310-open.html
+    Or copy and paste one of these URLs:
+        http://127.0.0.1:8888/?token=84eb3691085126909d1e69784e4c8eff650dfec9ea636ea8
+     or http://127.0.0.1:8888/?token=84eb3691085126909d1e69784e4c8eff650dfec9ea636ea8

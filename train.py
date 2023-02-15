@@ -19,7 +19,7 @@ torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
 # pre_config
-device = 'cuda'
+device = 'cuda:1'
 log_path = '/home/kikyo/code/hidden-conc-hypg/log/'
 writer = SummaryWriter(log_path)
 tb = program.TensorBoard()
@@ -40,14 +40,15 @@ PreConcept = torch.from_numpy(np.load('/home/kikyo/data/qt/PreConceptWeight.npy'
 hyp_input = torch.from_numpy(inci_mat).to(device)
 
 # hyper parameters
-seq_len = 8
+seq_len = 32
 steps = 1
 lr = 0.01
 top_num = 10
-epochs = 80
+epochs = 100
 d_model = 128
 rr_num = [0, 1, 2]
-ues_attn = True
+use_PreAttn = False
+use_HidAttn = True
 loss_weight = torch.ones(len(rr_num)).to(device)
 flag = ['train', 'test', 'val']
 
@@ -65,7 +66,7 @@ validate_loader = DataLoader(validate_dataset, shuffle=False, drop_last=True)
 test_loader = DataLoader(test_dataset, shuffle=False, drop_last=True)
 
 # load model
-model = HGAT(d_model, ecod_in, seq_len, rr_num, ues_attn).to(device)
+model = HGAT(d_model, ecod_in, seq_len, rr_num, use_PreAttn, use_HidAttn).to(device)
 for p in model.parameters():
     if p.dim() > 1:
         torch.nn.init.xavier_uniform_(p)
@@ -74,8 +75,8 @@ for p in model.parameters():
 
 optimizer_hgat = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=5e-4)
 scheduler1 = torch.optim.lr_scheduler.MultiStepLR(optimizer_hgat, gamma=0.3, milestones=[15, 40])
-scheduler2 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_hgat, mode='min', factor=0.3, patience=5, threshold=1e-4)
-scheduler3 = torch.optim.lr_scheduler.StepLR(optimizer_hgat, step_size=20, gamma=0.1, last_epoch=-1)
+scheduler2 = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_hgat, mode='min', factor=0.2, patience=5, threshold=1e-4)
+scheduler3 = torch.optim.lr_scheduler.StepLR(optimizer_hgat, step_size=10, gamma=0.1, last_epoch=-1)
 
 
 # train
