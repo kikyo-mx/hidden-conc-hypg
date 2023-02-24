@@ -2,6 +2,7 @@ from torch_geometric import nn
 import torch
 import torch.nn.functional as F
 import numpy as np
+from collections import Counter
 
 from models.encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack
 from models.attn import FullAttention, ProbAttention, AttentionLayer
@@ -12,11 +13,13 @@ np.random.seed(seed)
 torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
+
 class HGAT(torch.nn.Module):
-    def __init__(self, d_model, ecod_in, seq_len, rr_num=None, use_PreAttn=False, use_HidAttn=False, distil=True, el=3, c_in=32, c_out=32, device='cuda:1'):
+    def __init__(self, d_model, ecod_in, seq_len, rr_num=None, use_PreAttn=False, use_HidAttn=False, distil=True, el=3, c_in=32, c_out=32, device='cuda:1', Hedge_index=False):
         super(HGAT, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
+        self.Hedge_index = Counter(Hedge_index)
         self.device = device
         self.rr_num = rr_num
         self.PreAttn = use_PreAttn
@@ -62,17 +65,18 @@ class HGAT(torch.nn.Module):
         self.linear3 = torch.nn.Linear(d_model * seq_len, self.c_out)
         self.softmax = torch.nn.Softmax(dim=0)
 
-
     def Hattn(self, weights, concept, e):
-        Pedge = torch.zeros((concept.shape[0], weights.shape[1])).to(self.device)
-        Pnode = torch.zeros((concept.shape[0], weights.shape[1])).to(self.device)
-        for edge in range(e[1][-1] + 1):
-            node_index = torch.where(e[1] == edge)[0]
-            Pnode[node_index] = weights[e[0][node_index]]
-            Pedge[node_index] = torch.sum((concept[node_index].unsqueeze(1) * Pnode[node_index]), dim=0).float()
-        HG_Attn = (F.cosine_similarity(Pnode, Pedge) + 1) / 2
+        HG_Attn = torch.zeros(concept.shape[0]).to(self.device)
+        start = 0
+        for edge in self.Hedge_index:
+            node_index = np.arange(start, start + self.Hedge_index[edge])
+            Pnode = weights[e[0][node_index]]
+            Pedge = torch.zeros((node_index.shape[0], Pnode.shape[1])).to(self.device)
+            Pedge[:] = torch.sum((concept[node_index].unsqueeze(1) * Pnode), dim=0)
+            Pcosine = F.cosine_similarity(Pnode, Pedge)
+            HG_Attn[node_index] = self.softmax(Pcosine)
+            start += self.Hedge_index[edge]
         return HG_Attn
-
 
     def Hidden_edge(self, x_hid):
         stock_cosine = torch.zeros((x_hid.shape[0]), dtype=torch.int8)
@@ -95,15 +99,17 @@ class HGAT(torch.nn.Module):
         return e_hid, HidAttn
 
     def forward(self, price_input, e, concept):
+        # Informer
         # price_input = self.tokenConv(price_input.permute(0, 2, 1)).transpose(1,2)
         # context, query = self.informer_encoder_full(price_input, attn_mask=None)
+        # weights, output = self.informer_encoder(price_input, attn_mask=None)
+
+        # GRU
         context, query = self.gru(price_input)
-        # context, query = self.informer_encoder(price_input, attn_mask=None)
         weights, output = context.reshape(context.shape[0], -1), query[0].reshape(context.shape[0], -1)
 
         # output = F.leaky_relu(self.linear2(output))
         output = F.leaky_relu(output)
-        # output = self.drop(output)
 
         # PreC_HG_PreAttention
         if self.PreAttn:
@@ -112,6 +118,7 @@ class HGAT(torch.nn.Module):
             x = F.leaky_relu(self.hatt1(output, e, hyperedge_attr=HG_AttnP), 0.2)
         else:
             x = F.leaky_relu(self.hatt1(output, e), 0.2)
+
         # PreC_HG_Hidden_Attention
         if self.HidAttn:
             x = F.leaky_relu(x - self.linear4(output))
@@ -122,6 +129,4 @@ class HGAT(torch.nn.Module):
         else:
             x = F.leaky_relu(self.hatt2(x, e), 0.2)
 
-
-        # x = self.drop(x)
         return F.leaky_relu(self.linear1(x))

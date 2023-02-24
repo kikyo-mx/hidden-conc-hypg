@@ -19,17 +19,25 @@ def evaluate(pred, ground_truth, top_num, rr_num):
     performance = {}
     sharp = torch.zeros(len(rr_num))
     irr = torch.zeros(len(rr_num))
-    for j in range(len(rr_num)):
-        pred_top5 = torch.zeros(top_num)
-        pred_one = torch.argsort(pred[:, j], dim=0, descending=True)
-        for i in range(top_num):
-            topN = torch.where(pred_one == i)
-            pred_top5[i] = ground_truth[:, j][topN[0][0]]
-        sharp[j] = torch.mean(pred_top5) / torch.std(pred_top5) if torch.abs(torch.std(pred_top5)) > 1e-2 else torch.mean(pred_top5) / 1e-2
-        irr[j] = torch.mean(pred_top5)
+    rank_score = torch.zeros(len(rr_num))
+    for i in range(len(rr_num)):
+        rank_top = 0
+        pred_sort = torch.argsort(pred[:, i], dim=0, descending=True)
+        gt_sort = torch.argsort(ground_truth[:, i], dim=0, descending=True)
+        pred_topN = pred_sort[:top_num]
+        for j in range(top_num):
+            gt_top = torch.where(gt_sort == pred_topN[j])[0]
+            residual = gt_top - i if gt_top - i > 0 else 0
+            rank_top += 100 / (100 + residual)
+        rank_top /= top_num
+        topN = ground_truth[pred_topN, i]
+        sharp[i] = torch.mean(topN) / torch.std(topN) if torch.abs(torch.std(topN)) > 1e-1 else torch.mean(topN) / 1e-1
+        irr[i] = torch.mean(topN)
+        rank_score[i] = rank_top
     performance['sharp'] = sharp
     performance['irr'] = irr
-    return performance
+    performance['rank_score'] = rank_score
+    return performance['sharp'], performance['irr'], performance['rank_score']
 
 
 def get_correlation(x, y):
