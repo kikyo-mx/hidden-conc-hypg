@@ -15,21 +15,23 @@ torch.cuda.manual_seed_all(seed)
 
 
 class HGAT(torch.nn.Module):
-    def __init__(self, d_model, ecod_in, seq_len, rr_num=None, use_PreAttn=False, use_HidAttn=False, distil=True, el=3, c_in=32, c_out=32, device='cuda:1', Hedge_index=False):
+    def __init__(self, d_model, ecod_in, seq_len, rr_num=None, use_PreAttn=False, use_HidAttn=False, distil=True, el=3, c_in=32, c_out=32, device='cuda:1', Hedge_index=False, encoder='GRU'):
         super(HGAT, self).__init__()
         self.c_in = c_in
         self.c_out = c_out
+        self.encoder = encoder
         self.Hedge_index = Counter(Hedge_index)
         self.device = device
         self.rr_num = rr_num
         self.PreAttn = use_PreAttn
         self.HidAttn = use_HidAttn
         self.gru = torch.nn.GRU(input_size=6, hidden_size=c_in, batch_first=True)
+        self.lstm = torch.nn.LSTM(input_size=6, hidden_size=c_in, batch_first=True)
         self.Attn = ProbAttention
         self.drop = torch.nn.Dropout(p=0.2)
         self.tokenConv = torch.nn.Conv1d(ecod_in, out_channels=d_model,
                                          kernel_size=3, padding=1, padding_mode='circular')
-        self.informer_encoder_full = Encoder([
+        self.informer_encoder = Encoder([
             EncoderLayer(
                 AttentionLayer(
                     self.Attn(False, factor=6, attention_dropout=0.2,
@@ -99,15 +101,16 @@ class HGAT(torch.nn.Module):
         return e_hid, HidAttn
 
     def forward(self, price_input, e, concept):
-        # Informer
-        # price_input = self.tokenConv(price_input.permute(0, 2, 1)).transpose(1,2)
-        # context, query = self.informer_encoder_full(price_input, attn_mask=None)
-        # weights, output = self.informer_encoder(price_input, attn_mask=None)
-
-        # GRU
-        context, query = self.gru(price_input)
-        weights, output = context.reshape(context.shape[0], -1), query[0].reshape(context.shape[0], -1)
-
+        if self.encoder == 'Informer':
+            price_input = self.tokenConv(price_input.permute(0, 2, 1)).transpose(1, 2)
+            context, query = self.informer_encoder(price_input, attn_mask=None)
+            output = weights = self.linear2(context.reshape(context.shape[0], -1))
+        elif self.encoder == 'LSTM':
+            context, query = self.lstm(price_input)
+            weights, output = context.reshape(context.shape[0], -1), query[0].reshape(context.shape[0], -1)
+        else:
+            context, query = self.gru(price_input)
+            weights, output = context.reshape(context.shape[0], -1), query[0].reshape(context.shape[0], -1)
         # output = F.leaky_relu(self.linear2(output))
         output = F.leaky_relu(output)
 

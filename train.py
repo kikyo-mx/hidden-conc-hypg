@@ -69,7 +69,7 @@ print(len(data_set), 'data_set')
 print(len(train_loader), 'train_loader')
 
 # load model
-model = HGAT(d_model=d_model, ecod_in=ecod_in, seq_len=seq_len, rr_num=rr_num, use_PreAttn=use_PreAttn, use_HidAttn=use_HidAttn, Hedge_index=inci_mat[1], device=device).to(device)
+model = HGAT(d_model=d_model, ecod_in=ecod_in, seq_len=seq_len, rr_num=rr_num, use_PreAttn=use_PreAttn, use_HidAttn=use_HidAttn, Hedge_index=inci_mat[1], device=device, encoder='GRU').to(device)
 for p in model.parameters():
     if p.dim() > 1:
         torch.nn.init.xavier_uniform_(p)
