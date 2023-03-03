@@ -20,7 +20,7 @@ torch.cuda.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
 # pre_config
-device = 'cuda:0'
+device = 'cuda:1'
 log_path = '/home/kikyo/code/hidden-conc-hypg/log/'
 writer = SummaryWriter(log_path)
 tb = program.TensorBoard()

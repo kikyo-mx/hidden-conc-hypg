@@ -35,7 +35,7 @@ def evaluate(pred, ground_truth, top_num, rr_num):
         irr[i] = torch.mean(topN)
         rank_score[i] = rank_top
     performance['sharp'] = sharp
-    performance['irr'] = irr
+    performance['irr'] = irr / torch.tensor([1, 5, 30])
     performance['rank_score'] = rank_score
     return performance['sharp'], performance['irr'], performance['rank_score']
 
