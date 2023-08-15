@@ -1,2 +1,2 @@
 # hidden-conc-hypg
-A Hypergraph-based Framework for Stock Selection via Hidden Concept Mining Representation in Hypergraph Attention Network
+A Framework for Stocks Selection via Concept-Oriented Attention Representation in Hypergraph Neural Network
